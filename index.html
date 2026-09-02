@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VeloVibe — MIDI Tempo Player</title>
+<meta name="description" content="Play drum loops at any tempo from 60 to 250 BPM, retimed on the fly, with a synced metronome. The VeloVibe engine, in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="brand">VELOVIBE</div>
+    <div class="navlinks">
+      <a href="#player">Player</a>
+      <a href="#about">About</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap" id="player">
+
+  <div class="device">
+    <div class="device-top">
+      <span>VELOVIBE</span>
+      <span>MIDI TEMPO PLAYER</span>
+    </div>
+
+    <div class="screen">
+      <div class="screen-row"><span class="track" id="trk">TRK: ---</span></div>
+      <div class="screen-row"><span id="folder">---</span></div>
+      <div class="screen-row"><span id="status">SYS: LOADING…</span><span id="metro-badge"></span></div>
+
+      <div class="bpm-readout"><span id="bpm-value">140</span><span> BPM</span></div>
+
+      <input type="range" id="bpm-slider" min="60" max="250" step="1" value="140">
+      <div class="scale-labels">
+        <span>60</span><span>155</span><span>250</span>
+      </div>
+
+      <button class="play-btn" id="play-btn">▶  PLAY AT <span id="play-bpm">140</span> BPM</button>
+    </div>
+
+    <div class="metro-panel">
+      <div class="metro-head">
+        <span>🎛 METRONOME</span>
+        <label class="switch">
+          <input type="checkbox" id="metro-toggle">
+          <span class="slider-toggle"></span>
+        </label>
+      </div>
+      <div class="sound-chips" id="sound-chips">
+        <button data-sound="softWood" class="active">🪵 SOFT</button>
+        <button data-sound="highWood">🪵 HIGH</button>
+        <button data-sound="triangle">📐 TRI</button>
+      </div>
+    </div>
+
+    <div class="device-controls">
+      <button id="next-btn">⏭<br><small>NEXT</small></button>
+      <button id="stop-btn" class="danger">⏹<br><small>STOP</small></button>
+      <button id="resync-btn" class="accent">🔄<br><small>RE-SYNC</small></button>
+    </div>
+  </div>
+
+  <p class="hint">Tap play — your browser needs a click before it's allowed to make sound. Each loop is one of <span id="track-count">…</span> bundled MIDI patterns, rewritten to your exact tempo before it plays.</p>
+
+</main>
+
+<section id="about">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">How this page works</div>
+      <h2>The same engine as the iOS app</h2>
+      <p>Every loop is a MIDI file, not audio — so retiming it means editing three bytes in a tempo event, not stretching a waveform. This page does that rewrite in JavaScript, in your browser, the moment you press play: fetch the loop, patch its tempo to your target BPM, hand it to a General MIDI synth, done.</p>
+    </div>
+    <div class="feature-row">
+      <h3>Loop selection</h3>
+      <p>Landing exactly on your target BPM first; failing that, the nearest tempo within ±20 BPM; failing that, half-time or double-time of what you asked for. The same fallback order as the app.</p>
+    </div>
+    <div class="feature-row">
+      <h3>Metronome</h3>
+      <p>Three synthesized click sounds, generated with the Web Audio API rather than sample playback, locked to whatever tempo is currently sounding.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="statusbar"><span class="led"></span>SYS: SITE ONLINE</div>
+    <div class="links">
+      <a href="https://github.com/" id="github-link">GitHub</a>
+    </div>
+  </div>
+</footer>
+
+<midi-player id="midi-player" sound-font style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;"></midi-player>
+
+<script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js,npm/html-midi-player@1.5.0"></script>
+<script src="js/manifest.js"></script>
+<script src="js/tempo-rewriter.js"></script>
+<script src="js/metronome.js"></script>
+<script src="js/midi-engine.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
