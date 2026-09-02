@@ -84,7 +84,7 @@
     </div>
     <div class="feature-row">
       <h3>Metronome</h3>
-      <p>Three synthesized click sounds, generated with the Web Audio API rather than sample playback, locked to whatever tempo is currently sounding.</p>
+      <p>Not a separate click track running on its own clock — it's baked in as one more MIDI track, on the exact same tick timeline as the drums, using real General MIDI percussion notes (wood block, triangle). Same synth, same clock, so it can't drift out of time.</p>
     </div>
   </div>
 </section>
@@ -103,7 +103,7 @@
 <script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js,npm/html-midi-player@1.5.0"></script>
 <script src="js/manifest.js"></script>
 <script src="js/tempo-rewriter.js"></script>
-<script src="js/metronome.js"></script>
+<script src="js/metronome-track.js"></script>
 <script src="js/midi-engine.js"></script>
 <script src="js/app.js"></script>
 

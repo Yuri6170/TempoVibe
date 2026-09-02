@@ -1,7 +1,6 @@
 (function () {
   const playerEl = document.getElementById('midi-player');
   const engine = new MidiEngine(playerEl);
-  const metronome = new Metronome();
 
   const bpmSlider = document.getElementById('bpm-slider');
   const bpmValue = document.getElementById('bpm-value');
@@ -21,6 +20,12 @@
   trackCountEl.textContent = engine.allMidiFiles.length;
   statusEl.textContent = `SYS: ${engine.state.statusText}`;
 
+  let selectedSound = 'softWood';
+
+  function currentMetroSound() {
+    return metroToggle.checked ? selectedSound : null;
+  }
+
   // iOS Safari (and to a lesser extent other mobile browsers) will only
   // let audio start if it's triggered synchronously inside a user-gesture
   // handler — not after any `await`. This runs first, synchronously, on
@@ -37,8 +42,6 @@
       }
     } catch (_) { /* Tone not loaded yet — playerEl will still try on its own */ }
 
-    metronome.unlock();
-
     try {
       if (!_unlockCtx) _unlockCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (_unlockCtx.state !== 'running') _unlockCtx.resume();
@@ -49,12 +52,9 @@
       src.start(0);
     } catch (_) { /* ignore */ }
 
-    // If audio is still locked a moment later, say so on-screen — the
-    // usual fix on iOS is simply tapping the button a second time.
     setTimeout(() => {
       const locked = [];
       if (window.Tone && Tone.context && Tone.context.state !== 'running') locked.push('tone');
-      if (metronome.ctx && metronome.ctx.state !== 'running') locked.push('metro');
       if (_unlockCtx && _unlockCtx.state !== 'running') locked.push('page');
       if (locked.length) statusEl.textContent = `SYS: AUDIO LOCKED (${locked.join(',')}) — TAP PLAY AGAIN`;
     }, 700);
@@ -72,22 +72,19 @@
   bpmSlider.addEventListener('input', refreshBpmDisplay);
   refreshBpmDisplay();
 
-  playBtn.addEventListener('click', () => { unlockAudio(); engine.playTrack(targetBPM()); });
-  resyncBtn.addEventListener('click', () => { unlockAudio(); engine.playTrack(targetBPM()); });
+  playBtn.addEventListener('click', () => { unlockAudio(); engine.playTrack(targetBPM(), currentMetroSound()); });
+  resyncBtn.addEventListener('click', () => { unlockAudio(); engine.playTrack(targetBPM(), currentMetroSound()); });
   nextBtn.addEventListener('click', () => { unlockAudio(); engine.nextTrack(); });
-  stopBtn.addEventListener('click', () => {
-    engine.stop();
-    metronome.stop();
-  });
+  stopBtn.addEventListener('click', () => engine.stop());
 
+  // Toggling the metronome, or changing its sound, means rebuilding the
+  // MIDI file with a different (or no) click track — so if something is
+  // already playing, restart it in place at the same target tempo. That's
+  // a small audible restart, but it's the price of the click being a real
+  // baked-in track instead of a separately-ticking sound.
   metroToggle.addEventListener('change', () => {
     unlockAudio();
-    metronome.isOn = metroToggle.checked;
-    if (metronome.isOn && engine.isPlaying) {
-      metronome.start(engine.state.currentBPM);
-    } else {
-      metronome.stop();
-    }
+    if (engine.isPlaying) engine.playTrack(engine.currentTargetBPM, currentMetroSound());
     updateMetroBadge();
   });
 
@@ -96,17 +93,12 @@
       unlockAudio();
       soundChips.querySelectorAll('button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      metronome.sound = btn.dataset.sound;
-      if (metronome.isOn && engine.isPlaying) {
-        metronome.restart(engine.state.currentBPM);
+      selectedSound = btn.dataset.sound;
+      if (metroToggle.checked && engine.isPlaying) {
+        engine.playTrack(engine.currentTargetBPM, currentMetroSound());
       }
     });
   });
-
-  engine.onTrackStarted = (bpm) => {
-    bpm > 0 ? metronome.restart(bpm) : metronome.stop();
-    updateMetroBadge();
-  };
 
   function updateMetroBadge() {
     metroBadge.textContent = (metroToggle.checked && engine.isPlaying)

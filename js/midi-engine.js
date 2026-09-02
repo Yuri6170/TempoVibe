@@ -10,10 +10,10 @@ class MidiEngine {
     this.allMidiFiles = MIDI_MANIFEST.filter(f => /\.midi?$/i.test(f));
     this.lastPlayedName = '';
     this.currentTargetBPM = 140;
+    this.currentMetronomeSound = null; // null = off, else 'softWood'|'highWood'|'triangle'
     this.isPlaying = false;
     this._currentBlobUrl = null;
 
-    this.onTrackStarted = null;   // (bpm) => void
     this.onStateChange = null;    // (state: {trackName, folderName, statusText, currentBPM, isPlaying}) => void
 
     this.state = {
@@ -31,7 +31,7 @@ class MidiEngine {
     this.playerEl.addEventListener('stop', (e) => {
       const finishedNaturally = !!(e.detail && e.detail.finished);
       if (finishedNaturally && this.isPlaying) {
-        this.playTrack(this.currentTargetBPM);
+        this.playTrack(this.currentTargetBPM, this.currentMetronomeSound);
       }
     });
 
@@ -94,8 +94,9 @@ class MidiEngine {
     return null;
   }
 
-  async playTrack(bpm) {
+  async playTrack(bpm, metronomeSound = this.currentMetronomeSound) {
     this.currentTargetBPM = bpm;
+    this.currentMetronomeSound = metronomeSound || null;
     this.state.currentBPM = bpm;
 
     const info = this._selectTrack(bpm);
@@ -115,8 +116,13 @@ class MidiEngine {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const bytes = new Uint8Array(await res.arrayBuffer());
 
-      const rewritten = MidiTempoRewriter.rewrite(bytes, bpm);
+      let rewritten = MidiTempoRewriter.rewrite(bytes, bpm);
       if (!rewritten) throw new Error('rewrite failed');
+
+      // Bake the metronome in as a real extra track on the same tick
+      // timeline as the loop, rather than ticking on a separate clock —
+      // this is what keeps it sample-accurate in time with the music.
+      rewritten = MetronomeTrack.inject(rewritten, this.currentMetronomeSound);
 
       const blob = new Blob([rewritten], { type: 'audio/midi' });
       const url = URL.createObjectURL(blob);
@@ -144,8 +150,6 @@ class MidiEngine {
       this.state.statusText = 'PLAYING';
       this.state.isPlaying = true;
       this._emit();
-
-      if (this.onTrackStarted) this.onTrackStarted(bpm);
     } catch (err) {
       this.state.statusText = `ERR: ${err.message}`;
       this._emit();
@@ -153,7 +157,7 @@ class MidiEngine {
   }
 
   nextTrack() {
-    this.playTrack(this.currentTargetBPM);
+    this.playTrack(this.currentTargetBPM, this.currentMetronomeSound);
   }
 
   stop() {
@@ -164,7 +168,6 @@ class MidiEngine {
     this.state.statusText = 'STOPPED';
     this.state.isPlaying = false;
     this._emit();
-    if (this.onTrackStarted) this.onTrackStarted(0);
   }
 }
 

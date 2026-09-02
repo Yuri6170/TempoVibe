@@ -135,5 +135,5 @@ const MidiTempoRewriter = (() => {
     return result;
   }
 
-  return { rewrite };
+  return { rewrite, readUInt32, readVarLen };
 })();
