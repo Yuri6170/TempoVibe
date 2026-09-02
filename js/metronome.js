@@ -50,6 +50,13 @@ class Metronome {
     this.timer = setInterval(() => this._playClick(), intervalMs);
   }
 
+  // Must be called synchronously from inside a user gesture (a click/tap
+  // handler) on iOS Safari, or the AudioContext stays suspended forever
+  // and nothing will ever make sound.
+  unlock() {
+    this._ensureContext();
+  }
+
   stop() {
     if (this.timer) { clearInterval(this.timer); this.timer = null; }
   }

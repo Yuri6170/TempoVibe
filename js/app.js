@@ -21,6 +21,45 @@
   trackCountEl.textContent = engine.allMidiFiles.length;
   statusEl.textContent = `SYS: ${engine.state.statusText}`;
 
+  // iOS Safari (and to a lesser extent other mobile browsers) will only
+  // let audio start if it's triggered synchronously inside a user-gesture
+  // handler — not after any `await`. This runs first, synchronously, on
+  // every button press, before any of the fetch/parse work that follows.
+  // Playing a real (near-silent) buffer through a throwaway AudioContext
+  // is the standard trick to unlock WebKit's audio permission for the
+  // whole page, since the MIDI player's own internal audio context isn't
+  // something we can reach directly.
+  let _unlockCtx = null;
+  function unlockAudio() {
+    try {
+      if (window.Tone && Tone.context && Tone.context.state !== 'running') {
+        Tone.start();
+      }
+    } catch (_) { /* Tone not loaded yet — playerEl will still try on its own */ }
+
+    metronome.unlock();
+
+    try {
+      if (!_unlockCtx) _unlockCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (_unlockCtx.state !== 'running') _unlockCtx.resume();
+      const buf = _unlockCtx.createBuffer(1, 1, 22050);
+      const src = _unlockCtx.createBufferSource();
+      src.buffer = buf;
+      src.connect(_unlockCtx.destination);
+      src.start(0);
+    } catch (_) { /* ignore */ }
+
+    // If audio is still locked a moment later, say so on-screen — the
+    // usual fix on iOS is simply tapping the button a second time.
+    setTimeout(() => {
+      const locked = [];
+      if (window.Tone && Tone.context && Tone.context.state !== 'running') locked.push('tone');
+      if (metronome.ctx && metronome.ctx.state !== 'running') locked.push('metro');
+      if (_unlockCtx && _unlockCtx.state !== 'running') locked.push('page');
+      if (locked.length) statusEl.textContent = `SYS: AUDIO LOCKED (${locked.join(',')}) — TAP PLAY AGAIN`;
+    }, 700);
+  }
+
   function targetBPM() {
     return nearestBPMStep(Number(bpmSlider.value));
   }
@@ -33,15 +72,16 @@
   bpmSlider.addEventListener('input', refreshBpmDisplay);
   refreshBpmDisplay();
 
-  playBtn.addEventListener('click', () => engine.playTrack(targetBPM()));
-  resyncBtn.addEventListener('click', () => engine.playTrack(targetBPM()));
-  nextBtn.addEventListener('click', () => engine.nextTrack());
+  playBtn.addEventListener('click', () => { unlockAudio(); engine.playTrack(targetBPM()); });
+  resyncBtn.addEventListener('click', () => { unlockAudio(); engine.playTrack(targetBPM()); });
+  nextBtn.addEventListener('click', () => { unlockAudio(); engine.nextTrack(); });
   stopBtn.addEventListener('click', () => {
     engine.stop();
     metronome.stop();
   });
 
   metroToggle.addEventListener('change', () => {
+    unlockAudio();
     metronome.isOn = metroToggle.checked;
     if (metronome.isOn && engine.isPlaying) {
       metronome.start(engine.state.currentBPM);
@@ -53,6 +93,7 @@
 
   soundChips.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', () => {
+      unlockAudio();
       soundChips.querySelectorAll('button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       metronome.sound = btn.dataset.sound;
