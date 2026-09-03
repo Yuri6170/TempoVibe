@@ -5,9 +5,9 @@
 // playback, exactly like the app does on-device.
 
 class MidiEngine {
-  constructor(playerEl) {
+  constructor(playerEl, initialFiles) {
     this.playerEl = playerEl;      // <midi-player> element
-    this.allMidiFiles = MIDI_MANIFEST.filter(f => /\.midi?$/i.test(f));
+    this.allMidiFiles = (initialFiles || []).filter(f => /\.midi?$/i.test(f));
     this.lastPlayedName = '';
     this.currentTargetBPM = 140;
     this.currentMetronomeSound = null; // null = off, else 'softWood'|'highWood'|'triangle'
@@ -63,6 +63,14 @@ class MidiEngine {
       this.playerEl.addEventListener('load', onLoad);
       this.playerEl.addEventListener('error', onError);
     });
+  }
+
+  // Swaps in a freshly-discovered file list (e.g. from the GitHub API)
+  // without disturbing anything currently playing.
+  setFileList(files) {
+    this.allMidiFiles = files.filter(f => /\.midi?$/i.test(f));
+    if (!this.isPlaying) this.state.statusText = `FOUND ${this.allMidiFiles.length} TRACKS`;
+    this._emit();
   }
 
   _emit() {

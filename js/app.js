@@ -1,6 +1,6 @@
 (function () {
   const playerEl = document.getElementById('midi-player');
-  const engine = new MidiEngine(playerEl);
+  const engine = new MidiEngine(playerEl, MIDI_MANIFEST);
 
   const bpmSlider = document.getElementById('bpm-slider');
   const bpmValue = document.getElementById('bpm-value');
@@ -19,6 +19,19 @@
 
   trackCountEl.textContent = engine.allMidiFiles.length;
   statusEl.textContent = `SYS: ${engine.state.statusText}`;
+
+  // Ask GitHub directly for what's actually in midi/ right now, so a file
+  // dropped in and pushed shows up with no manifest.js edit needed. Silent
+  // fallback to the static list already loaded above if this fails for any
+  // reason (local testing, offline, API rate limit).
+  GitHubManifest.fetchList()
+    .then(names => {
+      engine.setFileList(names);
+      trackCountEl.textContent = engine.allMidiFiles.length;
+    })
+    .catch(err => {
+      console.warn('Falling back to static manifest.js —', err.message);
+    });
 
   let selectedSound = 'softWood';
 
