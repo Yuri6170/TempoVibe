@@ -103,9 +103,13 @@ class MidiEngine {
 
     const candidates = [];
     for (const bpm of bpmCandidates) {
-      const tag = `${bpm}_BPM`.toUpperCase();
+      // Word-boundary check: without it, looking for tag "85_BPM" would
+      // also match "185_BPM" or "285_BPM", since "85_BPM" is a plain
+      // substring of both. Requiring a non-digit (or start of string)
+      // right before the tag rules that out.
+      const tagRe = new RegExp(`(^|[^0-9])${bpm}_BPM`, 'i');
       for (const name of this.allMidiFiles) {
-        if (name.toUpperCase().includes(tag)) candidates.push({ name, folderBPM: bpm });
+        if (tagRe.test(name)) candidates.push({ name, folderBPM: bpm });
       }
     }
     if (candidates.length === 0) return null;
