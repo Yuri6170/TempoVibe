@@ -77,29 +77,45 @@ class MidiEngine {
     if (this.onStateChange) this.onStateChange({ ...this.state });
   }
 
+  // Pools loops from two kinds of related tempos, combined into one set:
+  //   - linear neighbours within ±10 BPM (target 170 → also 160/165/175/180)
+  //   - octave-related tempos, reachable by repeated ×2 / ÷2 while staying
+  //     inside 60–250 (target 60 → also 120, 240; target 120 → also 60, 240)
+  // A loop tagged 120 played back at 60 is a genuine half-time feel of the
+  // same groove (different subdivision density, same pulse), which is why
+  // it's safe to pool alongside merely-nearby tempos. Whichever loop gets
+  // picked, its tempo is rewritten to the exact target BPM before playback
+  // (see playTrack below), and the metronome track is built on that same
+  // rewritten tempo — so it always ticks at the target BPM the slider
+  // shows, never at the source loop's original tag.
+  static POOL_RANGE_BPM = 10;
+
   _selectTrack(target) {
-    const priorities = [];
-    priorities.push({ bpm: target, label: '' });
-    for (let delta = 5; delta <= 20; delta += 5) {
-      if (target + delta <= 250) priorities.push({ bpm: target + delta, label: ` [+${delta}]` });
-      if (target - delta >= 60) priorities.push({ bpm: target - delta, label: ` [-${delta}]` });
+    const bpmCandidates = new Set([target]);
+
+    for (let delta = 5; delta <= MidiEngine.POOL_RANGE_BPM; delta += 5) {
+      if (target + delta <= 250) bpmCandidates.add(target + delta);
+      if (target - delta >= 60) bpmCandidates.add(target - delta);
     }
-    if (target % 2 === 0 && target / 2 >= 60) priorities.push({ bpm: target / 2, label: ' [×2]' });
-    if (target * 2 <= 250) priorities.push({ bpm: target * 2, label: ' [÷2]' });
 
-    for (const p of priorities) {
-      const tag = `${p.bpm}_BPM`.toUpperCase();
-      const matches = this.allMidiFiles.filter(f => f.toUpperCase().includes(tag));
-      if (matches.length === 0) continue;
+    for (let bpm = target * 2; bpm <= 250; bpm *= 2) bpmCandidates.add(bpm);
+    for (let bpm = target / 2; bpm >= 60 && Number.isInteger(bpm); bpm /= 2) bpmCandidates.add(bpm);
 
-      let pool = matches;
-      if (pool.length > 1) pool = pool.filter(f => f !== this.lastPlayedName);
-      if (pool.length === 0) pool = matches;
-      const chosen = pool[Math.floor(Math.random() * pool.length)];
-
-      return { name: chosen, folderBPM: p.bpm };
+    const candidates = [];
+    for (const bpm of bpmCandidates) {
+      const tag = `${bpm}_BPM`.toUpperCase();
+      for (const name of this.allMidiFiles) {
+        if (name.toUpperCase().includes(tag)) candidates.push({ name, folderBPM: bpm });
+      }
     }
-    return null;
+    if (candidates.length === 0) return null;
+
+    let pool = candidates;
+    if (pool.length > 1) pool = pool.filter(c => c.name !== this.lastPlayedName);
+    if (pool.length === 0) pool = candidates;
+
+    const chosen = pool[Math.floor(Math.random() * pool.length)];
+    return { name: chosen.name, folderBPM: chosen.folderBPM };
   }
 
   async playTrack(bpm, metronomeSound = this.currentMetronomeSound) {

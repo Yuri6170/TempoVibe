@@ -31,9 +31,18 @@ working.
 - `js/tempo-rewriter.js` — a JS port of the app's Swift `MidiTempoRewriter`:
   finds every Set Tempo meta-event in a MIDI file and overwrites it with the
   target BPM, byte for byte.
-- `js/midi-engine.js` — a JS port of the app's `MidiEngine`: same
-  track-selection order (exact BPM → nearest within ±20 → half/double-time),
-  same "keep streaming" behavior when a loop finishes on its own.
+- `js/midi-engine.js` — a JS port of the app's `MidiEngine`, with one
+  deliberate change: instead of pulling from a single tempo, this pools two
+  kinds of related tempos together — linear neighbours within ±10 BPM
+  (target 170 → also 160/165/175/180), and octave-related tempos reachable
+  by repeated ×2 / ÷2 while staying inside 60–250 (target 60 → also 120,
+  240; target 120 → also 60, 240). A loop tagged 120 played back at 60 is a
+  genuine half-time feel of the same groove, not a different one, which is
+  why it's safe to pool alongside merely-nearby tempos. Whatever gets
+  picked is retimed to the exact target BPM before playback either way, and
+  the metronome track (below) is built on that same rewritten tempo — so it
+  always ticks at the target BPM shown on the slider, never at the source
+  loop's original tag.
 - `js/metronome-track.js` — the metronome, implemented by adding a real
   extra track to the MIDI file itself (real General MIDI percussion notes:
   wood block, triangle) rather than a separately-ticking Web Audio engine.
