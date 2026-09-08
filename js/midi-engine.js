@@ -173,7 +173,7 @@ class MidiEngine {
       this.lastPlayedName = info.name;
 
       const suffix = info.folderBPM !== bpm ? ` (src: ${info.folderBPM} BPM)` : '';
-      this.state.trackName = info.name.slice(0, 34);
+      this.state.trackName = MidiEngine.displayName(info.name);
       this.state.folderName = `TARGET: ${bpm} BPM${suffix}`;
       this.state.statusText = 'PLAYING';
       this.state.isPlaying = true;
@@ -198,6 +198,18 @@ class MidiEngine {
     this._emit();
   }
 }
+
+// Looks up the composer/title for a loop from PIECE_MANIFEST (js/piece-manifest.js,
+// derived from the MIDI files' own embedded meta-events) so the LCD can show
+// "Chopin — Prelude No. 2 in A Minor, Op. 28" instead of a raw filename.
+// Falls back to the filename itself if PIECE_MANIFEST isn't loaded or has no
+// entry for it, so a dropped-in loop with no metadata still displays.
+MidiEngine.displayName = function (filename) {
+  const entry = (typeof PIECE_MANIFEST !== 'undefined') && PIECE_MANIFEST[filename];
+  if (!entry) return filename.slice(0, 34);
+  const label = `${entry.composer} — ${entry.title}`;
+  return label.length > 60 ? label.slice(0, 57) + '…' : label;
+};
 
 function nearestBPMStep(bpm) {
   return Math.max(60, Math.min(250, Math.round(bpm / 5) * 5));

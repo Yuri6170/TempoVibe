@@ -61,8 +61,13 @@ main{ padding:56px 0 24px; }
   display:flex; justify-content:space-between; align-items:center;
   margin-bottom:6px;
   min-height:16px;
+  min-width:0;
 }
-.screen-row .track{ color:var(--green); }
+.screen-row .track{
+  color:var(--green);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  max-width:100%;
+}
 #metro-badge{ color:var(--green); }
 
 .bpm-readout{

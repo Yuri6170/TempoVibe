@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VeloVibe — MIDI Tempo Player</title>
-<meta name="description" content="Play drum loops at any tempo from 60 to 250 BPM, retimed on the fly, with a synced metronome. The VeloVibe engine, in your browser.">
+<meta name="description" content="Play classical piano MIDI pieces at any tempo from 60 to 250 BPM, retimed on the fly, with a synced metronome. The VeloVibe engine, in your browser.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -18,6 +18,7 @@
     <div class="navlinks">
       <a href="#player">Player</a>
       <a href="#about">About</a>
+      <a href="#credits">Credits</a>
     </div>
   </div>
 </nav>
@@ -67,7 +68,7 @@
     </div>
   </div>
 
-  <p class="hint">Tap play — your browser needs a click before it's allowed to make sound. Each loop is one of <span id="track-count">…</span> bundled MIDI patterns, rewritten to your exact tempo before it plays.</p>
+  <p class="hint">Tap play — your browser needs a click before it's allowed to make sound. Each loop is one of <span id="track-count">…</span> bundled classical piano MIDI pieces, rewritten to your exact tempo before it plays. <a href="#credits">Credits</a>.</p>
 
 </main>
 
@@ -89,6 +90,28 @@
   </div>
 </section>
 
+<section id="credits">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">Where the music comes from</div>
+      <h2>Credits</h2>
+      <p>
+        All <span id="credits-track-count">295</span> bundled MIDI pieces are classical piano
+        transcriptions by <strong>Bernd Krueger</strong>, from
+        <a href="http://www.piano-midi.de" target="_blank" rel="noopener">piano-midi.de</a>,
+        used and adapted under the
+        <a href="https://creativecommons.org/licenses/by-sa/3.0/de/deed.en" target="_blank" rel="noopener">Creative Commons BY-SA 3.0 Germany license</a>.
+        The underlying compositions are public domain; the specific MIDI
+        transcriptions (fingering, pedal, phrasing) are Bernd Krueger's own
+        work. Composers include Bach, Beethoven, Brahms, Chopin, Debussy,
+        Grieg, Haydn, Liszt, Mozart, Mussorgsky, Schubert, Schumann,
+        Tchaikovsky, and others — see the track name on the player for the
+        piece currently playing.
+      </p>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
     <div class="statusbar"><span class="led"></span>SYS: SITE ONLINE</div>
@@ -102,6 +125,7 @@
 
 <script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js,npm/html-midi-player@1.5.0"></script>
 <script src="js/manifest.js"></script>
+<script src="js/piece-manifest.js"></script>
 <script src="js/github-manifest.js"></script>
 <script src="js/tempo-rewriter.js"></script>
 <script src="js/metronome-track.js"></script>

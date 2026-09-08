@@ -1,8 +1,18 @@
 # VeloVibe — web player
 
-A working, static web version of the VeloVibe iOS app: 295 bundled MIDI drum
-loops, retimed to any BPM from 60–250 client-side in JavaScript, played back
-through a General MIDI synth in the browser. No backend, no build step.
+A working, static web version of the VeloVibe iOS app: 295 bundled classical
+piano MIDI pieces, retimed to any BPM from 60–250 client-side in JavaScript,
+played back through a General MIDI synth in the browser. No backend, no
+build step.
+
+**Attribution:** all 295 MIDI files are transcriptions by Bernd Krueger from
+[piano-midi.de](http://www.piano-midi.de), used under the
+[CC BY-SA 3.0 Germany license](https://creativecommons.org/licenses/by-sa/3.0/de/deed.en),
+which requires attribution and that any redistribution stay under the same
+license terms (see the site's `#credits` section and `js/piece-manifest.js`).
+If you fork this for a closed-source or paid distribution, check that your
+use is compatible with that license, or get separate permission from Bernd
+Krueger first — contact details are on the piano-midi.de site.
 
 ## Adding your own loops
 
@@ -23,7 +33,12 @@ working.
 
 ## How it works
 
-- `midi/` — all 295 loops from the app, copied byte-for-byte.
+- `midi/` — all 295 loops from the app, copied byte-for-byte. Their embedded
+  MIDI meta-events (composer, piece title, Bernd Krueger's copyright notice)
+  are untouched, even though the filenames are just tempo tags.
+- `js/piece-manifest.js` — composer + title for every file in `midi/`,
+  extracted from those embedded meta-events, so the player can show
+  "Chopin — Prelude No. 2 in A Minor, Op. 28" instead of the raw filename.
 - `js/manifest.js` — a static fallback filename list, used only if the
   GitHub API lookup below fails.
 - `js/github-manifest.js` — asks GitHub's REST API what's actually in
